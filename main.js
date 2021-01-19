@@ -181,103 +181,8 @@ class Light {
     }
 }
 
-/**
- * Class sphere, extends from the _3DObject class
- */
-class Sphere extends _3DObject {
-    constructor(program, position, radius = 1, N = 50, M = 50) {
-        super(program, position);
-        this.position = position;
-        this.radius = radius;
-        this.N = N;
-        this.M = M;
-    }
 
-    loadData() {
-        var self = this;
 
-        var generateVertices = function (N, M) {
-            for (var i = 0; i < N; i++) {
-                var alfa = i * Math.PI / (N - 1) - Math.PI / 2;
-
-                for (var j = 0; j < M; j++) {
-                    var beta = j * 2 * Math.PI / M;
-
-                    var x = self.radius * Math.cos(alfa) * Math.cos(beta);
-                    var y = self.radius * Math.sin(alfa);
-                    var z = self.radius * Math.cos(alfa) * Math.sin(beta);
-
-                    self.vertices.push(vec4(x, y, z, 1.0));
-                }
-            }
-        };
-
-        var generateNormals = function (N, M) {
-            for (var i in self.vertices) {
-                self.normals.push(vec4(normalize(vec3(self.vertices[i])), 0.0));
-            }
-        };
-
-        var generateIndices = function (N, M) {
-            var index = function (i, j) {
-                return i * M + j;
-            }
-
-            for (var i = 0; i < N - 1; i++)
-                for (var j = 0; j < M; j++) {
-                    self.indices.push(index(i, j));
-                    self.indices.push(index(i, (j + 1) % M));
-                    self.indices.push(index(i + 1, j));
-                    self.indices.push(index(i, (j + 1) % M));
-                    self.indices.push(index(i + 1, (j + 1) % M));
-                    self.indices.push(index(i + 1, j));
-                }
-        };
-
-        generateVertices(this.N, this.M);
-        generateNormals(this.N, this.M);
-        generateIndices(this.N, this.M);
-    }
-}
-
-class Cube extends _3DObject {
-    constructor(program, position, size = 1) {
-        super(program, position);
-        this.position = position;
-        this.size = size;
-
-    }
-
-    loadData() {
-        var self = this;
-
-        var generateVertices = function () {
-            for (var x = -0.5; x <= 0.5; x += 1)
-                for (var y = -0.5; y <= 0.5; y += 1)
-                    for (var z = -0.5; z <= 0.5; z += 1)
-                        self.vertices.push(vec4(x * self.size, y * self.size , z * self.size, 1.0));
-        };
-
-        var generateNormals = function () {
-            for (var i in self.vertices) {
-                self.normals.push(vec4(normalize(vec3(self.vertices[i])), 0.0));
-            }
-        };
-
-        var generateIndices = function () {
-            self.indices = [0, 2, 1, 1, 2, 3,
-                4, 6, 5, 5, 6, 7,
-                0, 1, 4, 4, 1, 5,
-                2, 3, 6, 6, 3, 7,
-                0, 4, 6, 6, 2, 0,
-                1, 7, 5, 7, 1, 3];
-        };
-
-        generateVertices();
-        generateNormals();
-        generateIndices();
-    }
-}
 
 
 
@@ -338,8 +243,7 @@ class CustomizedCube extends _3DObject {
 
 var camera;
 var light;
-var cube;
-var sphere1, sphere2, sphere3, sphere4;
+
 
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
@@ -354,10 +258,19 @@ window.onload = function init() {
     //     vInitial = vCurrent;
     //     mouseDown = false;
     // });
-    var deneme;
+    var lastMouseCorX = 0;
+    var lastMouseCorY = 0;
     canvas.addEventListener('mousemove', function (event) {
-        deneme = event.clientX;
-        camera.rotate(deneme/100);
+
+        lastMouseCorX = 0;
+        lastMouseCorY = 0;
+        
+        console.log(lastMouseCorX);
+        if(lastMouseCorX>event.clientX){
+            camera.rotate(lastMouseCorX/100);
+        }
+        else
+            camera.rotate(-lastMouseCorX/100);
 
     // if (firstMouse)
     // {
@@ -365,12 +278,12 @@ window.onload = function init() {
     //     lastY = y;
     //     firstMouse = false;
     // }
-    //
+
     // var xOffset = x - lastX;
     // var yOffset = lastY - y;
     // lastX = x;
     // lastY = y;
-    //
+
     // camera.rotate(xOffset, yOffset)
     });
 
@@ -387,8 +300,8 @@ window.onload = function init() {
 
     gl.useProgram(program);
 
-    // camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 3, 0));
-    camera = new Camera(program, vec3(9.0, 3.0, 3.0), vec3(0, 0, 0), vec3(0, 1, 0));
+    camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 3, 0));
+    // camera = new Camera(program, vec3(9.0, 3.0, 3.0), vec3(0, 0, 0), vec3(0, 1, 0));
     light = new Light(program, vec4(2, 4, 6, 1));
     light2 = new Light(program, vec4(2, 0, 6, 1));
 
@@ -430,17 +343,12 @@ function render() {
 
 
 
-    // sphere1.render();
-    // sphere2.render();
-    // sphere3.render();
-    // sphere4.render();
-
-    // head.render();
-    // body.render();
+    head.render();
+    body.render();
     arm1.render();
-    // arm2.render();
-    // leg1.render();
-    // leg2.render();
+    arm2.render();
+    leg1.render();
+    leg2.render();
     // arm1.rotate(2);
 
     requestAnimFrame(render);
