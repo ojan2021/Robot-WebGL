@@ -49,6 +49,58 @@ class _3DObject {
             specular: vec3(0.0, 0.0, 0.0),
             shininess: 250.0
         }
+
+        this.texCoordsArray = [];
+        this.texture = [];
+
+        this.texCoord = [
+            vec2(0.3, 0),
+            vec2(0.3, 1),
+            vec2(1, 1),
+            vec2(1, 0)
+        ]
+
+        this.greenTexCoord = [
+            vec2(0.0, 0.375),
+            vec2(0.0, 0.625),
+            vec2(0.25, 0.625),
+            vec2(0.25, 0.375)
+        ]
+
+        this.redTexCoord = [
+            vec2(0.25, 0.375),
+            vec2(0.25, 0.625),
+            vec2(0.5, 0.625),
+            vec2(0.5, 0.375)
+        ]
+
+        this.blueTexCoord = [
+            vec2(0.5, 0.375),
+            vec2(0.5, 0.625),
+            vec2(0.75, 0.625),
+            vec2(0.75, 0.375)
+        ]
+
+        this.orangeTexCoord = [
+            vec2(0.75, 0.375),
+            vec2(0.75, 0.625),
+            vec2(1.0, 0.625),
+            vec2(1.0, 0.375)
+        ]
+
+        this.yellowTexCoord = [
+            vec2(0.25, 0.375),
+            vec2(0.25, 0.12),
+            vec2(0.5, 0.12),
+            vec2(0.5, 0.375)
+        ]
+
+        this.whiteTexCoord = [
+            vec2(0.25, 0.88),
+            vec2(0.25, 0.625),
+            vec2(0.5, 0.625),
+            vec2(0.5, 0.88)
+        ]
     }
 
     loadData() {
@@ -69,9 +121,13 @@ class _3DObject {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.bufNormal);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(this.normals), gl.STATIC_DRAW);
 
+        // creating texture for buffer
+        this.bufTexture = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.bufTexture );
+        gl.bufferData( gl.ARRAY_BUFFER, flatten(this.texCoordsArray), gl.STATIC_DRAW );
 
-
-
+        var image = document.getElementById("texImage");
+        this.configureTexture( image );
     }
 
     render() {
@@ -103,11 +159,50 @@ class _3DObject {
         gl.vertexAttribPointer(norm, 4, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(norm);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.bufIndex);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTexture);
+
+        var vTexCoord = gl.getAttribLocation( this.program, "vTexCoord" );
+        gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
+        gl.enableVertexAttribArray( vTexCoord );
+
         gl.drawArrays( gl.TRIANGLES, 0, this.vertices.length )
     }
 
+    configureTexture( image ) {
+        this.texture = gl.createTexture();
+        gl.bindTexture( gl.TEXTURE_2D, this.texture );
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB,
+            gl.RGB, gl.UNSIGNED_BYTE, image );
+        gl.generateMipmap( gl.TEXTURE_2D );
+        gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+            gl.NEAREST_MIPMAP_LINEAR );
+        gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
 
+        gl.uniform1i(gl.getUniformLocation(this.program, "texture"), 0);
+    }
+
+    // configureTexture( image, textureVar, textureName, id ) {
+    //     textureVar = gl.createTexture();
+    //
+    //     gl.bindTexture( gl.TEXTURE_2D, textureVar );
+    //     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    //     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image );
+    //     gl.generateMipmap( gl.TEXTURE_2D );
+    //     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+    //         gl.NEAREST_MIPMAP_LINEAR );
+    //     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+    //
+    //     if(id == 1)
+    //     {
+    //         gl.activeTexture( gl.TEXTURE0 );
+    //     }
+    //     else
+    //     {
+    //         gl.activeTexture( gl.TEXTURE1 );
+    //     }
+    //     gl.uniform1i(gl.getUniformLocation(program, textureName), id);
+    // }
 
     translate(dir) {
         this.matModel = mult(translate(dir), this.matModel);
@@ -127,6 +222,9 @@ class Camera {
         this.position = position;
         this.target = target;
         this.up = up;
+        this.SENSITIVITY = 0.3
+        this.yaw = -134.0
+        this.pitch = -27.0
     }
 
     render() {
@@ -143,8 +241,27 @@ class Camera {
 
     }
 
-    rotate(angle,x,y) {
-        this.position = vec3(mult_v(rotate(angle, vec3(x, y, 0)), vec4(this.position)));
+    rotate(angle) {
+        this.position = vec3(mult_v(rotate(angle, vec3(0, 1, 0)), vec4(this.position)));
+    }
+
+    rotate(xOffset, yOffset)
+    {
+        xOffset *= this.SENSITIVITY;
+        yOffset *= this.SENSITIVITY;
+
+        this.yaw += xOffset
+        this.pitch += yOffset
+
+        if(this.pitch > 89.0) this.pitch = 89.0
+        if(this.pitch < -89.0) this.pitch = -89.0
+
+        var directionX = Math.cos(radians(this.yaw)) * Math.cos(radians(this.pitch))
+        var directionY = Math.sin(radians(this.pitch));
+        var directionZ = Math.sin(radians(this.yaw)) * Math.cos(radians(this.pitch))
+        var direction = vec3(directionX, directionY, directionZ)
+
+        this.target = add(this.position, normalize(direction))
     }
 }
 
@@ -184,9 +301,6 @@ class Light {
 
 
 
-
-
-
 class CustomizedCube extends _3DObject {
     constructor(program, position, size = 1, xSize = 1, ySize = 1, zSize = 1) {
         super(program, position);
@@ -195,6 +309,7 @@ class CustomizedCube extends _3DObject {
         this.xSize = xSize
         this.ySize = ySize
         this.zSize = zSize
+
 
         this.initialVertices = [
             vec4(-0.5  * xSize * size, -0.5 * ySize * size,  0.5 * zSize * size, 1.0 ),
@@ -208,35 +323,68 @@ class CustomizedCube extends _3DObject {
         ];
     }
 
-    quad(a, b, c, d) {
+    quad(a, b, c, d, faceNum) {
 
         var t1 = subtract(this.initialVertices[b], this.initialVertices[a]);
         var t2 = subtract(this.initialVertices[c], this.initialVertices[b]);
         var normal = cross(t1, t2);
         normal = vec4(normal, 0);
 
+        var texCoord = []
+        switch (faceNum)
+        {
+            case 1:
+                texCoord = this.blueTexCoord
+                break
+            case 2:
+                texCoord = this.redTexCoord
+                break
+            case 3:
+                texCoord = this.whiteTexCoord
+                break
+            case 4:
+                texCoord = this.yellowTexCoord
+                break
+            case 5:
+                texCoord = this.greenTexCoord
+                break
+            case 6:
+                texCoord = this.orangeTexCoord
+                break
+        }
 
         this.vertices.push(this.initialVertices[a]);
         this.normals.push(normal);
+        this.texCoordsArray.push(texCoord[0]);
+
         this.vertices.push(this.initialVertices[b]);
         this.normals.push(normal);
+        this.texCoordsArray.push(texCoord[1]);
+
         this.vertices.push(this.initialVertices[c]);
         this.normals.push(normal);
+        this.texCoordsArray.push(texCoord[2]);
+
         this.vertices.push(this.initialVertices[a]);
         this.normals.push(normal);
+        this.texCoordsArray.push(texCoord[0]);
+
         this.vertices.push(this.initialVertices[c]);
         this.normals.push(normal);
+        this.texCoordsArray.push(texCoord[2]);
+
         this.vertices.push(this.initialVertices[d]);
         this.normals.push(normal);
+        this.texCoordsArray.push(texCoord[3]);
     }
 
     loadData() {
-        this.quad( 1, 0, 3, 2 );
-        this.quad( 2, 3, 7, 6 );
-        this.quad( 3, 0, 4, 7 );
-        this.quad( 6, 5, 1, 2 );
-        this.quad( 4, 5, 6, 7 );
-        this.quad( 5, 4, 0, 1 );
+        this.quad( 1, 0, 3, 2 , 1);
+        this.quad( 2, 3, 7, 6 , 2);
+        this.quad( 3, 0, 4, 7 , 3);
+        this.quad( 6, 5, 1, 2 , 4);
+        this.quad( 4, 5, 6, 7 , 5);
+        this.quad( 5, 4, 0, 1 , 6);
     }
 
     
@@ -262,40 +410,43 @@ window.onload = function init() {
     //     mouseDown = false;
     // });
 
-    // canvas.addEventListener('mousemove', function (event) {
-    // if (firstMouse)
-    // {
-    //     lastX = x;
-    //     lastY = y;
-    //     firstMouse = false;
-    // }
+    var lastX = canvas.width / 2
+    var lastY = canvas.height / 2
+    var firstMouse = true
 
-    // var xOffset = x - lastX;
-    // var yOffset = lastY - y;
-    // lastX = x;
-    // lastY = y;
+    canvas.addEventListener('mousemove', function (event) {
+    if (firstMouse)
+    {
+        lastX = event.clientX;
+        lastY = event.clientY;
+        firstMouse = false;
+    }
 
-    // camera.rotate(xOffset, yOffset)
-    // });
-    var arrayX = [];
-    arrayX.push(0);
+    var xOffset = event.clientX - lastX;
+    var yOffset = lastY - event.clientY;
+    lastX = event.clientX;
+    lastY = event.clientY;
 
-    var arrayY = [];
-    arrayY.push(0);
-
-
-    
-    canvas.addEventListener("mousemove", function(event){
-    if(arrayX[0]>event.clientX)
-        camera.rotate(3,0,1);
-    else
-        camera.rotate(-3,0,1);
-    arrayX.pop();
-    arrayX.push(event.clientX);
-
-
-        
+    camera.rotate(xOffset, yOffset)
     });
+
+    // var arrayX = [];
+    // arrayX.push(0);
+    //
+    // var arrayY = [];
+    // arrayY.push(0);
+    //
+    //
+    //
+    // canvas.addEventListener("mousemove", function(event){
+    // if(arrayX[0]>event.clientX)
+    //     camera.rotate(3,0,1);
+    // else
+    //     camera.rotate(-3,0,1);
+    // arrayX.pop();
+    // arrayX.push(event.clientX);
+    //
+    // });
 
     gl = WebGLUtils.setupWebGL(canvas);
     if (!gl) { alert("WebGL isn't available"); }
@@ -311,7 +462,7 @@ window.onload = function init() {
     gl.useProgram(program);
 
     camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 3, 0));
-    // camera = new Camera(program, vec3(9.0, 3.0, 3.0), vec3(0, 0, 0), vec3(0, 1, 0));
+    // camera = new Camera(program, vec3(9.0, 0.0, 3.0), vec3(0, -3, 0), vec3(0, 1, 0));
     light = new Light(program, vec4(2, 4, 6, 1));
     light2 = new Light(program, vec4(2, 0, 6, 1));
 
@@ -322,6 +473,7 @@ window.onload = function init() {
 
 
     head = new CustomizedCube(program, vec4(0.0, 7.0, 0.0, 1.0), 2, 2.75, 1.5,1.75);
+    // head = new CustomizedCube(program, vec4(0.0, 7.0, 0.0, 1.0), 2, 1, 1,1);
     head.init();
 
     body = new CustomizedCube(program, vec4(0.0, 1.0, 0.0, 1.0), 2, 2.5,4.5);
@@ -338,6 +490,7 @@ window.onload = function init() {
     //
     leg2 = new CustomizedCube(program, vec4(-1.5, -8, 0.0, 1.0), 2, 1.0, 4.5);
     leg2.init();
+
 
     render();
 }
@@ -359,7 +512,7 @@ function render() {
     arm2.render();
     leg1.render();
     leg2.render();
-    // arm1.rotate(2);
+
 
     requestAnimFrame(render);
 }
