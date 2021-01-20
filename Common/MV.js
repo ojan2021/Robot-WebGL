@@ -352,6 +352,7 @@ function rotate( angle, axis )
     var z = v[2];
 
     var c = Math.cos( radians(angle) );
+    
     var omc = 1.0 - c;
     var s = Math.sin( radians(angle) );
 

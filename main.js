@@ -140,10 +140,11 @@ class Camera {
         var proj = gl.getUniformLocation(this.program, "m_Proj");
         var matProj = perspective(90, 1.0, 0.0001, 1000);
         gl.uniformMatrix4fv(proj, false, flatten(matProj));
+
     }
 
-    rotate(angle) {
-        this.position = vec3(mult_v(rotate(angle, vec3(0, 1, 0)), vec4(this.position)));
+    rotate(angle,x,y) {
+        this.position = vec3(mult_v(rotate(angle, vec3(x, y, 0)), vec4(this.position)));
     }
 }
 
@@ -237,6 +238,8 @@ class CustomizedCube extends _3DObject {
         this.quad( 4, 5, 6, 7 );
         this.quad( 5, 4, 0, 1 );
     }
+
+    
 }
 
 
@@ -258,20 +261,8 @@ window.onload = function init() {
     //     vInitial = vCurrent;
     //     mouseDown = false;
     // });
-    var lastMouseCorX = 0;
-    var lastMouseCorY = 0;
-    canvas.addEventListener('mousemove', function (event) {
 
-        lastMouseCorX = 0;
-        lastMouseCorY = 0;
-        
-        console.log(lastMouseCorX);
-        if(lastMouseCorX>event.clientX){
-            camera.rotate(lastMouseCorX/100);
-        }
-        else
-            camera.rotate(-lastMouseCorX/100);
-
+    // canvas.addEventListener('mousemove', function (event) {
     // if (firstMouse)
     // {
     //     lastX = x;
@@ -285,6 +276,25 @@ window.onload = function init() {
     // lastY = y;
 
     // camera.rotate(xOffset, yOffset)
+    // });
+    var arrayX = [];
+    arrayX.push(0);
+
+    var arrayY = [];
+    arrayY.push(0);
+
+
+    
+    canvas.addEventListener("mousemove", function(event){
+    if(arrayX[0]>event.clientX)
+        camera.rotate(3,0,1);
+    else
+        camera.rotate(-3,0,1);
+    arrayX.pop();
+    arrayX.push(event.clientX);
+
+
+        
     });
 
     gl = WebGLUtils.setupWebGL(canvas);

@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="80e85374-b6e5-4696-86e8-434e50f7ac9f" name="Default Changelist" comment="" />
+    <list default="true" id="80e85374-b6e5-4696-86e8-434e50f7ac9f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/object3d.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/object3d.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common/MV.js" beforeDir="false" afterPath="$PROJECT_DIR$/Common/MV.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common/webgl-utils.js" beforeDir="false" afterPath="$PROJECT_DIR$/Common/webgl-utils.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/main.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectId" id="1mIIto4jsUJgzf5dmKzKjsw8a6c" />
   <component name="ProjectViewState">
@@ -43,6 +55,7 @@
       <workItem from="1609699122430" duration="1382000" />
       <workItem from="1610988208978" duration="1890000" />
       <workItem from="1610990322011" duration="23199000" />
+      <workItem from="1611149210953" duration="13000" />
     </task>
     <servers />
   </component>
