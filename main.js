@@ -1,6 +1,7 @@
 
 var canvas;
 var gl;
+var seconds = 0;
 
 function mult_v(m, v) {
     if (!m.matrix) {
@@ -36,11 +37,11 @@ class _3DObject {
     constructor(program, position = vec3(0, 0, 0)) {
         this.program = program;
         this.bufVertex = 0;
-        // this.bufIndex = 0;
         this.bufNormal = 0;
+
         this.vertices = [];
-        this.indices = [];
         this.normals = [];
+
         this.position = position;
         this.matModel = mat4();
         this.material = {
@@ -53,9 +54,12 @@ class _3DObject {
         this.texCoordsArray = [];
         this.texture = [];
 
+        this.texCoordsArray2 = [];
+        this.texture2 = [];
+
         this.texCoord = [
-            vec2(0.3, 0),
-            vec2(0.3, 1),
+            vec2(0, 0),
+            vec2(0, 1),
             vec2(1, 1),
             vec2(1, 0)
         ]
@@ -128,6 +132,16 @@ class _3DObject {
 
         var image = document.getElementById("texImage");
         this.configureTexture( image );
+
+        // creating texture for buffer
+        this.bufTexture2 = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, this.bufTexture2 );
+        gl.bufferData( gl.ARRAY_BUFFER, flatten(this.texCoordsArray2), gl.STATIC_DRAW );
+
+        var image2 = document.getElementById("texImage2");
+
+        this.configureTexture2(image2);
+        // gl.activeTexture(gl.TEXTURE1);
     }
 
     render() {
@@ -160,10 +174,16 @@ class _3DObject {
         gl.enableVertexAttribArray(norm);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTexture);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTexture2);
+
 
         var vTexCoord = gl.getAttribLocation( this.program, "vTexCoord" );
         gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
         gl.enableVertexAttribArray( vTexCoord );
+
+        var vTexCoord2 = gl.getAttribLocation( this.program, "vTexCoord2" );
+        gl.vertexAttribPointer( vTexCoord2, 2, gl.FLOAT, false, 0, 0 );
+        gl.enableVertexAttribArray( vTexCoord2 );
 
         gl.drawArrays( gl.TRIANGLES, 0, this.vertices.length )
     }
@@ -180,6 +200,22 @@ class _3DObject {
         gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
 
         gl.uniform1i(gl.getUniformLocation(this.program, "texture"), 0);
+        gl.activeTexture(gl.TEXTURE0);
+    }
+
+    configureTexture2( image2 ) {
+        this.texture2 = gl.createTexture();
+        gl.bindTexture( gl.TEXTURE_2D, this.texture2 );
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB,
+            gl.RGB, gl.UNSIGNED_BYTE, image2 );
+        gl.generateMipmap( gl.TEXTURE_2D );
+        gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+            gl.NEAREST_MIPMAP_LINEAR );
+        gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+
+        gl.uniform1i(gl.getUniformLocation(this.program, "texture2"), 1);
+        gl.activeTexture(gl.TEXTURE1);
     }
 
     // configureTexture( image, textureVar, textureName, id ) {
@@ -209,7 +245,7 @@ class _3DObject {
     }
 
     rotate(angle) {
-        this.matModel = mult(rotate(angle, vec3(0, 1, 0)), this.matModel);
+        this.matModel = mult(rotate(angle, vec3(1, 0, 0)), this.matModel);
     }
 }
 
@@ -222,7 +258,7 @@ class Camera {
         this.position = position;
         this.target = target;
         this.up = up;
-        this.SENSITIVITY = 0.3
+        this.SENSITIVITY = 0.1
         this.yaw = -134.0
         this.pitch = -27.0
     }
@@ -331,6 +367,7 @@ class CustomizedCube extends _3DObject {
         normal = vec4(normal, 0);
 
         var texCoord = []
+        var texCoord2 = []
         switch (faceNum)
         {
             case 1:
@@ -353,29 +390,43 @@ class CustomizedCube extends _3DObject {
                 break
         }
 
+        texCoord2 = this.texCoord
+
+
         this.vertices.push(this.initialVertices[a]);
         this.normals.push(normal);
         this.texCoordsArray.push(texCoord[0]);
+        this.texCoordsArray2.push(texCoord2[0])
 
         this.vertices.push(this.initialVertices[b]);
         this.normals.push(normal);
         this.texCoordsArray.push(texCoord[1]);
+        this.texCoordsArray2.push(texCoord2[1])
+
 
         this.vertices.push(this.initialVertices[c]);
         this.normals.push(normal);
         this.texCoordsArray.push(texCoord[2]);
+        this.texCoordsArray2.push(texCoord2[2])
+
 
         this.vertices.push(this.initialVertices[a]);
         this.normals.push(normal);
         this.texCoordsArray.push(texCoord[0]);
+        this.texCoordsArray2.push(texCoord2[0])
+
 
         this.vertices.push(this.initialVertices[c]);
         this.normals.push(normal);
-        this.texCoordsArray.push(texCoord[2]);
+        this.texCoordsArray.push(texCoord[1]);
+        this.texCoordsArray2.push(texCoord2[2])
+
 
         this.vertices.push(this.initialVertices[d]);
         this.normals.push(normal);
-        this.texCoordsArray.push(texCoord[3]);
+        this.texCoordsArray.push(texCoord[2]);
+        this.texCoordsArray2.push(texCoord2[3])
+
     }
 
     loadData() {
@@ -464,7 +515,6 @@ window.onload = function init() {
     camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 3, 0));
     // camera = new Camera(program, vec3(9.0, 0.0, 3.0), vec3(0, -3, 0), vec3(0, 1, 0));
     light = new Light(program, vec4(2, 4, 6, 1));
-    light2 = new Light(program, vec4(2, 0, 6, 1));
 
 
 
@@ -473,7 +523,7 @@ window.onload = function init() {
 
 
     head = new CustomizedCube(program, vec4(0.0, 7.0, 0.0, 1.0), 2, 2.75, 1.5,1.75);
-    // head = new CustomizedCube(program, vec4(0.0, 7.0, 0.0, 1.0), 2, 1, 1,1);
+    texFlag = true;
     head.init();
 
     body = new CustomizedCube(program, vec4(0.0, 1.0, 0.0, 1.0), 2, 2.5,4.5);
@@ -487,7 +537,7 @@ window.onload = function init() {
 
     leg1 = new CustomizedCube(program, vec4(1.5, -8, 0.0, 1.0), 2, 1.0, 4.5);
     leg1.init();
-    //
+    
     leg2 = new CustomizedCube(program, vec4(-1.5, -8, 0.0, 1.0), 2, 1.0, 4.5);
     leg2.init();
 
@@ -504,8 +554,6 @@ function render() {
     // light.rotate(1);
     light.render();
 
-
-
     head.render();
     body.render();
     arm1.render();
@@ -513,8 +561,28 @@ function render() {
     leg1.render();
     leg2.render();
 
+    
+
+    // if (seconds < 50){
+    //     // leg1.rotate(-0.5);
+    //     // leg2.rotate(0.5);
+    //     // arm1.rotate(0.5);
+    //     // arm2.rotate(-0.5);
+    // } else {
+    //     // leg1.rotate(0.5);
+    //     // leg2.rotate(-0.5);
+    //     // arm1.rotate(-0.5);
+    //     // arm2.rotate(0.5);
+    //     if(seconds == 150){
+    //         seconds = -50;
+    //     }
+    // }
+
+
 
     requestAnimFrame(render);
+    // seconds++;
+    // console.log(seconds);
 }
 
 
