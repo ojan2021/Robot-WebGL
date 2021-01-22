@@ -140,8 +140,7 @@ class _3DObject {
 
         var image2 = document.getElementById("texImage2");
 
-        this.configureTexture2(image2);
-        // gl.activeTexture(gl.TEXTURE1);
+        // this.configureTexture2(image2);
     }
 
     render() {
@@ -418,13 +417,13 @@ class CustomizedCube extends _3DObject {
 
         this.vertices.push(this.initialVertices[c]);
         this.normals.push(normal);
-        this.texCoordsArray.push(texCoord[1]);
+        this.texCoordsArray.push(texCoord[2]);
         this.texCoordsArray2.push(texCoord2[2])
 
 
         this.vertices.push(this.initialVertices[d]);
         this.normals.push(normal);
-        this.texCoordsArray.push(texCoord[2]);
+        this.texCoordsArray.push(texCoord[3]);
         this.texCoordsArray2.push(texCoord2[3])
 
     }
@@ -449,17 +448,35 @@ var light;
 
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
-    // canvas.addEventListener('mousedown', function (event) {
-    //     mouseDown = true;
-    //     vInitial = eventToWorld(event);
-    //     vCurrent = vInitial;
-    //     console.log(vInitial);
+
+    // canvas.addEventListener('keydown', function (event) {
+    //
     // });
-    // canvas.addEventListener('mouseup', function (event) {
-    //     sphereMatrix = mult(calcRotation(), sphereMatrix);
-    //     vInitial = vCurrent;
-    //     mouseDown = false;
-    // });
+    var cameraUp = vec3(-0.1, -0.05, -0.1);
+    var cameraDown    = vec3(0.1, 0.05, 0.1);
+    var cameraLeft = vec3(-0.1, 0.0, 0.0);
+    var cameraRight    = vec3(0.1, 0.0, 0.0);
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key == 'ArrowUp') {
+            camera.position = add(camera.position, cameraUp);
+            console.log(camera.position);
+
+        } else if (event.key == 'ArrowDown'){
+            camera.position = add(camera.position, cameraDown);
+            console.log("down");
+
+        } else if (event.key == 'ArrowLeft'){
+            camera.position = add(camera.position, cameraLeft);
+            console.log("left");
+
+        } else if (event.key == 'ArrowRight'){
+            camera.position = add(camera.position, cameraRight);
+            console.log("right");
+        }
+    });
+
+
 
     var lastX = canvas.width / 2
     var lastY = canvas.height / 2
@@ -512,8 +529,8 @@ window.onload = function init() {
 
     gl.useProgram(program);
 
-    camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 3, 0));
-    // camera = new Camera(program, vec3(9.0, 0.0, 3.0), vec3(0, -3, 0), vec3(0, 1, 0));
+    // camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 3, 0));
+    camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 1, 0));
     light = new Light(program, vec4(2, 4, 6, 1));
 
 
