@@ -1,3 +1,8 @@
+/**
+ * Usage:
+ * - Arrow keys and mouse movement is for the navigation of the camera through the scene
+ * - WASD is for movement of the Character
+ */
 
 var canvas;
 var gl;
@@ -25,9 +30,7 @@ function mult_v(m, v) {
     return result;
 }
 
-/**
- *
- */
+
 class Light {
     constructor(program, position) {
         this.program = program;
@@ -59,10 +62,38 @@ class Light {
     }
 }
 
+class LocalLight {
+    constructor(program, position) {
+        this.program = program;
+        this.position = position;
+        this.intensity = {
+            ambient: vec3(1, 1, 1),
+            diffuse: vec3(1.0, 1.0, 1.0),
+            specular: vec3(1.0, 1.0, 1.0)
+        }
+    }
 
-/**
- *
- */
+    render() {
+        var pos = gl.getUniformLocation(this.program, "v_LightLocal");
+        gl.uniform4fv(pos, flatten(this.position));
+
+        // sending light properties
+        var ambient = gl.getUniformLocation(this.program, "light_AmbientLocal");
+        gl.uniform3fv(ambient, flatten(this.intensity.ambient));
+
+        var diffuse = gl.getUniformLocation(this.program, "light_DiffuseLocal");
+        gl.uniform3fv(diffuse, flatten(this.intensity.diffuse));
+
+        var specular = gl.getUniformLocation(this.program, "light_SpecularLocal");
+        gl.uniform3fv(specular, flatten(this.intensity.specular));
+    }
+
+    rotate(angle) {
+        this.position = mult_v(rotate(angle, vec3(0, 1, 0)), this.position);
+    }
+}
+
+
 class Camera {
     constructor(program, position, target, up) {
         this.program = program;
@@ -72,6 +103,7 @@ class Camera {
         this.SENSITIVITY = 0.1
         this.yaw = -134.0
         this.pitch = -27.0
+        this.front = normalize(subtract(this.target, this.position))
     }
 
     render() {
@@ -111,7 +143,7 @@ class Camera {
         this.target = add(this.position, normalize(direction))
     }
 
-    translateBy(x, y, z)
+    translate(x, y, z)
     {
         this.position = vec3(mult_v(translate(x, y, z), vec4(this.position)));
     }
@@ -140,10 +172,10 @@ class _3DObject {
         this.position = position;
         this.matModel = mat4();
         this.material = {
-            ambient: vec3(0.2, 0.3, 0.4),
-            diffuse: vec3(0.3, 0.6, 0.5),
-            specular: vec3(0.0, 0.0, 0.0),
-            shininess: 250.0
+            ambient: vec3(0.3, 0.3, 0.3),
+            diffuse: vec3(0.25, 0.25, 0.25),
+            specular: vec3(0.2, 0.2, 0.2),
+            shininess: 75.0
         }
 
         this.texCoordsArray = [];
@@ -449,44 +481,77 @@ class CustomizedCube extends _3DObject {
 
 var camera;
 var light;
+var zMovementCounter = 0;
+var xMovementCounter = 0;
+
 
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
 
-
-    var cameraUp = vec3(-0.1, -0.05, -0.1);
-    var cameraDown    = vec3(0.1, 0.05, 0.1);
-    var cameraLeft = vec3(-0.1, 0.0, 0.0);
-    var cameraRight    = vec3(0.1, 0.0, 0.0);
-
     document.addEventListener('keydown', (event) => {
 
         if (event.key == 'ArrowUp') {
-            var front = normalize(subtract(camera.target, camera.position)) * 0.5
-            camera.translateBy(front);
-
-            console.log(camera.position);
+            var cameraSpeed = scale(0.1, camera.front)
+            camera.translate(cameraSpeed)
+            camera.target = add(camera.position, cameraSpeed)
+            // console.log(camera.position);
 
         } else if (event.key == 'ArrowDown'){
-            camera.position = add(camera.position, cameraDown);
-            console.log("down");
+            var cameraSpeed = scale(0.1, camera.front)
+            camera.translate(negate(cameraSpeed))
+            camera.target = add(camera.position, cameraSpeed)
+            // console.log(camera.position);
 
         } else if (event.key == 'ArrowLeft'){
-            camera.position = add(camera.position, cameraLeft);
-            console.log("left");
+            var cameraLeft = normalize(cross(camera.up, camera.front))
+
+            camera.translate(scale(0.1, cameraLeft))
+            camera.target = add(camera.position, scale(0.1, camera.front))
 
         } else if (event.key == 'ArrowRight'){
-            camera.position = add(camera.position, cameraRight);
-            console.log("right");
+            var cameraRight = normalize(cross(camera.front, camera.up))
+
+            camera.translate(scale(0.1, cameraRight))
+            camera.target = add(camera.position, scale(0.1, camera.front))
 
         } else if (event.key == 'w'){
 
+            head.translate(vec3(0, 0, 2))
+            body.translate(vec3(0, 0, 2))
+            arm1.translate(vec3(0, 0, 2))
+            arm2.translate(vec3(0, 0, 2))
+            leg1.translate(vec3(0, 0, 2))
+            leg2.translate(vec3(0, 0, 2))
+            zMovementCounter += 2
+
+
         } else if (event.key == 'a'){
+            head.translate(vec3(2, 0, 0))
+            body.translate(vec3(2, 0, 0))
+            arm1.translate(vec3(2, 0, 0))
+            arm2.translate(vec3(2, 0, 0))
+            leg1.translate(vec3(2, 0, 0))
+            leg2.translate(vec3(2, 0, 0))
+            xMovementCounter += 2
 
         } else if (event.key == 's'){
 
-        } else if (event.key == 'd'){
+            head.translate(vec3(0, 0, -2))
+            body.translate(vec3(0, 0, -2))
+            arm1.translate(vec3(0, 0, -2))
+            arm2.translate(vec3(0, 0, -2))
+            leg1.translate(vec3(0, 0, -2))
+            leg2.translate(vec3(0, 0, -2))
+            zMovementCounter -= 2
 
+        } else if (event.key == 'd'){
+            head.translate(vec3(-2, 0, 0))
+            body.translate(vec3(-2, 0, 0))
+            arm1.translate(vec3(-2, 0, 0))
+            arm2.translate(vec3(-2, 0, 0))
+            leg1.translate(vec3(-2, 0, 0))
+            leg2.translate(vec3(-2, 0, 0))
+            xMovementCounter -= 2
         }
     });
 
@@ -494,14 +559,14 @@ window.onload = function init() {
 
     var lastX = canvas.width / 2
     var lastY = canvas.height / 2
-    var firstMouse = true
+    var mouseFlag = true
 
     canvas.addEventListener('mousemove', function (event) {
-    if (firstMouse)
+    if (mouseFlag)
     {
         lastX = event.clientX;
         lastY = event.clientY;
-        firstMouse = false;
+        mouseFlag = false;
     }
 
     var xOffset = event.clientX - lastX;
@@ -531,7 +596,8 @@ window.onload = function init() {
 
     // camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 3, 0));
     camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 1, 0));
-    light = new Light(program, vec4(2, 4, 6, 1));
+    light = new Light(program, vec4(2, 8, 10, 1));
+    lightLocal = new LocalLight(program,vec4(2, 8, -10, 1));
 
 
     head = new CustomizedCube(program, vec4(0.0, 7.0, 0.0, 1.0), 2, 2.75, 1.5,1.75);
@@ -556,15 +622,13 @@ window.onload = function init() {
 
     render();
 }
-
+var flag = false
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // camera.rotate(1);
     camera.render();
-
-    // light.rotate(1);
     light.render();
+    lightLocal.render();
 
     head.render();
     body.render();
@@ -573,11 +637,52 @@ function render() {
     leg1.render();
     leg2.render();
 
-    
+    head.translate(vec3(-xMovementCounter, 0, -zMovementCounter))
+    body.translate(vec3(-xMovementCounter, 0, -zMovementCounter))
+    arm1.translate(vec3(-xMovementCounter, 0, -zMovementCounter))
+    arm2.translate(vec3(-xMovementCounter, 0, -zMovementCounter))
+    leg1.translate(vec3(-xMovementCounter, 0, -zMovementCounter))
+    leg2.translate(vec3(-xMovementCounter, 0, -zMovementCounter))
+
+    /**
+     * This is alternative way of animation in which it has a little lag;
+     */
+    // var yCoordOfArm = mult_v(arm1.matModel, arm1.position)[1]
+    // console.log(yCoordOfArm)
+    //
+    // if (yCoordOfArm > 3.8) {
+    //     flag = true
+    // }
+    // if (yCoordOfArm > 8 ) {
+    //     flag = false
+    // }
+    //
+    // if (flag){
+    //     leg1.rotate(-0.5);
+    //     leg2.rotate(0.5);
+    //     arm1.translate(vec3(0, -8, 0))
+    //     arm1.rotate(0.5);
+    //     arm1.translate(vec3(0,  8, 0))
+    //
+    //     arm2.translate(vec3(0, -8, 0))
+    //     arm2.rotate(-0.5);
+    //     arm2.translate(vec3(0,  8, 0))
+    // } else {
+    //     leg1.rotate(0.5);
+    //     leg2.rotate(-0.5);
+    //     arm1.translate(vec3(0, -8, 0))
+    //     arm1.rotate(-0.5);
+    //     arm1.translate(vec3(0, 8, 0))
+    //
+    //     arm2.translate(vec3(0, -8, 0))
+    //     arm2.rotate(0.5);
+    //     arm2.translate(vec3(0, 8, 0))
+    // }
 
     if (seconds < 50){
         leg1.rotate(-0.5);
         leg2.rotate(0.5);
+
         arm1.translate(vec3(0, -8, 0))
         arm1.rotate(0.5);
         arm1.translate(vec3(0,  8, 0))
@@ -590,6 +695,7 @@ function render() {
     } else {
         leg1.rotate(0.5);
         leg2.rotate(-0.5);
+
         arm1.translate(vec3(0, -8, 0))
         arm1.rotate(-0.5);
         arm1.translate(vec3(0, 8, 0))
@@ -603,9 +709,20 @@ function render() {
         }
     }
 
-
+    head.translate(vec3(xMovementCounter, 0, zMovementCounter))
+    body.translate(vec3(xMovementCounter, 0, zMovementCounter))
+    arm1.translate(vec3(xMovementCounter, 0, zMovementCounter))
+    arm2.translate(vec3(xMovementCounter, 0, zMovementCounter))
+    leg1.translate(vec3(xMovementCounter, 0, zMovementCounter))
+    leg2.translate(vec3(xMovementCounter, 0, zMovementCounter))
 
     requestAnimFrame(render);
+
+    if(seconds > 180){
+        console.log("resetting seconds")
+        seconds = 0;
+        flag = false;
+    }
     seconds++;
     // console.log(seconds);
 }

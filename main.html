@@ -13,6 +13,7 @@ attribute vec4 v_Norm;
 attribute vec4 v_Pos;
 
 uniform vec4 v_Light;
+uniform vec4 v_LightLocal;
 uniform vec4 v_Camera;
 
 uniform mat4 m_Model;
@@ -22,6 +23,7 @@ uniform mat4 m_Proj;
 varying vec3 o_Norm;
 varying vec3 o_Camera;
 varying vec3 o_Light;
+varying vec3 o_LightLocal;
 
 void main() 
 {
@@ -30,11 +32,14 @@ void main()
 
     o_Norm = normalize(m_ModelView * v_Norm).xyz;
     o_Light = (m_View * v_Light).xyz;
+    o_LightLocal = (m_View * v_LightLocal).xyz;
     o_Camera = normalize(-tmp_Pos).xyz;
     
     // directional light
     if (v_Light.w != 0.0 )
 		  o_Light = o_Light - tmp_Pos.xyz;
+    if (v_LightLocal.w != 0.0 )
+		  o_LightLocal = o_LightLocal - tmp_Pos.xyz;
 
     fTexCoord = vTexCoord;
     fTexCoord2 = vTexCoord2;
@@ -57,30 +62,38 @@ uniform sampler2D texture2;
 varying vec3 o_Norm;
 varying vec3 o_Camera;
 varying vec3 o_Light;
+varying vec3 o_LightLocal;
 
 uniform float col_Shininess;
 uniform vec3 col_Ambient, col_Diffuse, col_Specular;
 uniform vec3 light_Ambient, light_Diffuse, light_Specular;
+uniform vec3 light_AmbientLocal, light_DiffuseLocal, light_SpecularLocal;
 
 void main()
 {
     vec3 N = normalize(o_Norm);
     vec3 E = normalize(o_Camera);
     vec3 L = normalize(o_Light);
+    vec3 LLocal = normalize(o_LightLocal);
+
 
     vec3 H = normalize(L + E);
+    vec3 HLocal = normalize(LLocal + E);
+
    // vec3 ambient = vec3(texture2D( texture, fTexCoord ));
 
     vec3 ambient = vec3(texture2D( texture, fTexCoord ) * texture2D(texture2, fTexCoord2));
 
     float Kd = max(dot(L, N), 0.0);
-	vec3 diffuse = Kd * col_Diffuse * light_Diffuse;
+    float KdLocal = max(dot(LLocal, N), 0.0);
+	vec3 diffuse = Kd * col_Diffuse * light_Diffuse + KdLocal * col_Diffuse * light_DiffuseLocal;
     
     float Ks = pow(max(dot(N, H), 0.0), col_Shininess);
-	vec3 specular = Ks * col_Specular * light_Specular;
+    float KsLocal = pow(max(dot(N, HLocal), 0.0), col_Shininess);
+	vec3 specular = Ks * col_Specular * light_Specular + KsLocal * col_Specular * light_SpecularLocal;
 
 	// discard the specular highlight if the light's behind the vertex
-	if (dot(L, N) < 0.0) 
+	if (dot(L, N) < 0.0 && dot(LLocal, N) < 0.0)
 	    specular = vec3(0.0, 0.0, 0.0);
     
 	gl_FragColor.xyz = ambient + diffuse + specular;
