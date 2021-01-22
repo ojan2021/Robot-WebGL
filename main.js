@@ -110,6 +110,11 @@ class Camera {
 
         this.target = add(this.position, normalize(direction))
     }
+
+    translateBy(x, y, z)
+    {
+        this.position = vec3(mult_v(translate(x, y, z), vec4(this.position)));
+    }
 }
 
 
@@ -455,8 +460,11 @@ window.onload = function init() {
     var cameraRight    = vec3(0.1, 0.0, 0.0);
 
     document.addEventListener('keydown', (event) => {
+
         if (event.key == 'ArrowUp') {
-            camera.position = add(camera.position, cameraUp);
+            var front = normalize(subtract(camera.target, camera.position)) * 0.5
+            camera.translateBy(front);
+
             console.log(camera.position);
 
         } else if (event.key == 'ArrowDown'){
@@ -533,10 +541,10 @@ window.onload = function init() {
     body = new CustomizedCube(program, vec4(0.0, 1.0, 0.0, 1.0), 2, 2.5,4.5,1,5);
     body.init();
 
-    arm1 = new CustomizedCube(program, vec4(3.0, 1.5, 0.0, 1.0), 2, 0.75, 3.8, 0.9,2);
+    arm1 = new CustomizedCube(program, vec4(3.4, 1.5, 0.0, 1.0), 2, 0.75, 3.8, 0.9,2);
     arm1.init();
 
-    arm2 = new CustomizedCube(program, vec4(-3.0, 1.5, 0.0, 1.0), 2, 0.75, 3.8, 0.9,2);
+    arm2 = new CustomizedCube(program, vec4(-3.4, 1.5, 0.0, 1.0), 2, 0.75, 3.8, 0.9,2);
     arm2.init();
 
     leg1 = new CustomizedCube(program, vec4(1.5, -8, 0.0, 1.0), 2, 1.0, 4.5,1,5);
@@ -567,25 +575,38 @@ function render() {
 
     
 
-    // if (seconds < 50){
-    //     leg1.rotate(-0.5);
-    //     leg2.rotate(0.5);
-    //     // arm1.rotate(0.5);
-    //     // arm2.rotate(-0.5);
-    // } else {
-    //     leg1.rotate(0.5);
-    //     leg2.rotate(-0.5);
-    //     // arm1.rotate(-0.5);
-    //     // arm2.rotate(0.5);
-    //     if(seconds == 125){
-    //         seconds = -25;
-    //     }
-    // }
+    if (seconds < 50){
+        leg1.rotate(-0.5);
+        leg2.rotate(0.5);
+        arm1.translate(vec3(0, -8, 0))
+        arm1.rotate(0.5);
+        arm1.translate(vec3(0,  8, 0))
+
+        arm2.translate(vec3(0, -8, 0))
+        arm2.rotate(-0.5);
+        arm2.translate(vec3(0,  8, 0))
+
+
+    } else {
+        leg1.rotate(0.5);
+        leg2.rotate(-0.5);
+        arm1.translate(vec3(0, -8, 0))
+        arm1.rotate(-0.5);
+        arm1.translate(vec3(0, 8, 0))
+
+        arm2.translate(vec3(0, -8, 0))
+        arm2.rotate(0.5);
+        arm2.translate(vec3(0, 8, 0))
+
+        if(seconds >= 125){
+            seconds = -25;
+        }
+    }
 
 
 
     requestAnimFrame(render);
-    // seconds++;
+    seconds++;
     // console.log(seconds);
 }
 
