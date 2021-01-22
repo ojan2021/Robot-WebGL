@@ -154,42 +154,42 @@ class _3DObject {
             vec2(1, 0)
         ]
 
-        this.greenTexCoord = [
+        this.headBack = [
             vec2(0.0, 0.375),
             vec2(0.0, 0.625),
             vec2(0.25, 0.625),
             vec2(0.25, 0.375)
         ]
 
-        this.redTexCoord = [
+        this.ear1Tex = [
             vec2(0.25, 0.375),
             vec2(0.25, 0.625),
             vec2(0.5, 0.625),
             vec2(0.5, 0.375)
         ]
 
-        this.blueTexCoord = [
+        this.faceTex = [
             vec2(0.5, 0.375),
             vec2(0.5, 0.625),
             vec2(0.75, 0.625),
             vec2(0.75, 0.375)
         ]
 
-        this.orangeTexCoord = [
+        this.ear2tex = [
             vec2(0.75, 0.375),
             vec2(0.75, 0.625),
             vec2(1.0, 0.625),
             vec2(1.0, 0.375)
         ]
 
-        this.yellowTexCoord = [
+        this.headupTex = [
             vec2(0.25, 0.375),
             vec2(0.25, 0.12),
             vec2(0.5, 0.12),
             vec2(0.5, 0.375)
         ]
 
-        this.whiteTexCoord = [
+        this.neckTex = [
             vec2(0.25, 0.88),
             vec2(0.25, 0.625),
             vec2(0.5, 0.625),
@@ -223,14 +223,13 @@ class _3DObject {
         var image = document.getElementById("texImage");
         this.configureTexture( image );
 
-        // creating texture for buffer
+        // creating texture for buffer2
         this.bufTexture2 = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, this.bufTexture2 );
         gl.bufferData( gl.ARRAY_BUFFER, flatten(this.texCoordsArray2), gl.STATIC_DRAW );
 
         var image2 = document.getElementById("texImage2");
-
-        // this.configureTexture2(image2);
+        this.configureTexture2(image2);
     }
 
     render() {
@@ -263,7 +262,7 @@ class _3DObject {
         gl.enableVertexAttribArray(norm);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTexture);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTexture2);
+        // gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTexture2);
 
 
         var vTexCoord = gl.getAttribLocation( this.program, "vTexCoord" );
@@ -307,27 +306,7 @@ class _3DObject {
         gl.activeTexture(gl.TEXTURE1);
     }
 
-    // configureTexture( image, textureVar, textureName, id ) {
-    //     textureVar = gl.createTexture();
-    //
-    //     gl.bindTexture( gl.TEXTURE_2D, textureVar );
-    //     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    //     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image );
-    //     gl.generateMipmap( gl.TEXTURE_2D );
-    //     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
-    //         gl.NEAREST_MIPMAP_LINEAR );
-    //     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
-    //
-    //     if(id == 1)
-    //     {
-    //         gl.activeTexture( gl.TEXTURE0 );
-    //     }
-    //     else
-    //     {
-    //         gl.activeTexture( gl.TEXTURE1 );
-    //     }
-    //     gl.uniform1i(gl.getUniformLocation(program, textureName), id);
-    // }
+
 
     translate(dir) {
         this.matModel = mult(translate(dir), this.matModel);
@@ -340,13 +319,14 @@ class _3DObject {
 
 
 class CustomizedCube extends _3DObject {
-    constructor(program, position, size = 1, xSize = 1, ySize = 1, zSize = 1) {
+    constructor(program, position, size = 1, xSize = 1, ySize = 1, zSize = 1,headFlag=1) {
         super(program, position);
         this.position = position;
         this.size = size;
-        this.xSize = xSize
-        this.ySize = ySize
-        this.zSize = zSize
+        this.xSize = xSize;
+        this.ySize = ySize;
+        this.zSize = zSize;
+        this.headFlag = headFlag;
 
 
         this.initialVertices = [
@@ -361,7 +341,7 @@ class CustomizedCube extends _3DObject {
         ];
     }
 
-    quad(a, b, c, d, faceNum) {
+    quad(a, b, c, d, texChooser) {
 
         var t1 = subtract(this.initialVertices[b], this.initialVertices[a]);
         var t2 = subtract(this.initialVertices[c], this.initialVertices[b]);
@@ -370,29 +350,30 @@ class CustomizedCube extends _3DObject {
 
         var texCoord = []
         var texCoord2 = []
-        switch (faceNum)
+        switch (texChooser)
         {
             case 1:
-                texCoord = this.blueTexCoord
+                texCoord = this.faceTex
                 break
             case 2:
-                texCoord = this.redTexCoord
+                texCoord = this.ear1Tex
                 break
             case 3:
-                texCoord = this.whiteTexCoord
+                texCoord = this.neckTex
                 break
             case 4:
-                texCoord = this.yellowTexCoord
+                texCoord = this.headupTex
                 break
             case 5:
-                texCoord = this.greenTexCoord
+                texCoord = this.headBack
                 break
             case 6:
-                texCoord = this.orangeTexCoord
+                texCoord = this.ear2tex
                 break
         }
 
-        texCoord2 = texCoord;
+        texCoord2 = this.texCoord;
+
 
         this.vertices.push(this.initialVertices[a]);
         this.normals.push(normal);
@@ -431,12 +412,29 @@ class CustomizedCube extends _3DObject {
     }
 
     loadData() {
-        this.quad( 1, 0, 3, 2 , 1);
-        this.quad( 2, 3, 7, 6 , 2);
-        this.quad( 3, 0, 4, 7 , 3);
-        this.quad( 6, 5, 1, 2 , 4);
-        this.quad( 4, 5, 6, 7 , 5);
-        this.quad( 5, 4, 0, 1 , 6);
+        if(this.headFlag == 1){
+            this.quad( 1, 0, 3, 2 , 1);
+            this.quad( 2, 3, 7, 6 , 2);
+            this.quad( 3, 0, 4, 7 , 3);
+            this.quad( 6, 5, 1, 2 , 4);
+            this.quad( 4, 5, 6, 7 , 5);
+            this.quad( 5, 4, 0, 1 , 6);
+        } else if (this.headFlag == 2){
+            this.quad( 1, 0, 3, 2 , 3);
+            this.quad( 2, 3, 7, 6 , 3);
+            this.quad( 3, 0, 4, 7 , 3);
+            this.quad( 6, 5, 1, 2 , 3);
+            this.quad( 4, 5, 6, 7 , 3);
+            this.quad( 5, 4, 0, 1 , 3);
+        } else {
+            this.quad( 1, 0, 3, 2 , 4);
+            this.quad( 2, 3, 7, 6 , 4);
+            this.quad( 3, 0, 4, 7 , 4);
+            this.quad( 6, 5, 1, 2 , 4);
+            this.quad( 4, 5, 6, 7 , 4);
+            this.quad( 5, 4, 0, 1 , 4);
+        }
+
     }
 
     
@@ -450,9 +448,7 @@ var light;
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
 
-    // canvas.addEventListener('keydown', function (event) {
-    //
-    // });
+
     var cameraUp = vec3(-0.1, -0.05, -0.1);
     var cameraDown    = vec3(0.1, 0.05, 0.1);
     var cameraLeft = vec3(-0.1, 0.0, 0.0);
@@ -474,6 +470,15 @@ window.onload = function init() {
         } else if (event.key == 'ArrowRight'){
             camera.position = add(camera.position, cameraRight);
             console.log("right");
+
+        } else if (event.key == 'w'){
+
+        } else if (event.key == 'a'){
+
+        } else if (event.key == 's'){
+
+        } else if (event.key == 'd'){
+
         }
     });
 
@@ -500,29 +505,14 @@ window.onload = function init() {
     // console.log(camera.position);
     });
 
-    // var arrayX = [];
-    // arrayX.push(0);
-    //
-    // var arrayY = [];
-    // arrayY.push(0);
-    //
-    //
-    //
-    // canvas.addEventListener("mousemove", function(event){
-    // if(arrayX[0]>event.clientX)
-    //     camera.rotate(3,0,1);
-    // else
-    //     camera.rotate(-3,0,1);
-    // arrayX.pop();
-    // arrayX.push(event.clientX);
-    //
-    // });
 
     gl = WebGLUtils.setupWebGL(canvas);
     if (!gl) { alert("WebGL isn't available"); }
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+
 
 
     gl.enable(gl.DEPTH_TEST);
@@ -540,19 +530,19 @@ window.onload = function init() {
     texFlag = true;
     head.init();
 
-    body = new CustomizedCube(program, vec4(0.0, 1.0, 0.0, 1.0), 2, 2.5,4.5);
+    body = new CustomizedCube(program, vec4(0.0, 1.0, 0.0, 1.0), 2, 2.5,4.5,1,5);
     body.init();
 
-    arm1 = new CustomizedCube(program, vec4(3.0, 1.5, 0.0, 1.0), 2, 0.75, 3.8, 0.9);
+    arm1 = new CustomizedCube(program, vec4(3.0, 1.5, 0.0, 1.0), 2, 0.75, 3.8, 0.9,2);
     arm1.init();
 
-    arm2 = new CustomizedCube(program, vec4(-3.0, 1.5, 0.0, 1.0), 2, 0.75, 3.8, 0.9);
+    arm2 = new CustomizedCube(program, vec4(-3.0, 1.5, 0.0, 1.0), 2, 0.75, 3.8, 0.9,2);
     arm2.init();
 
-    leg1 = new CustomizedCube(program, vec4(1.5, -8, 0.0, 1.0), 2, 1.0, 4.5);
+    leg1 = new CustomizedCube(program, vec4(1.5, -8, 0.0, 1.0), 2, 1.0, 4.5,1,5);
     leg1.init();
     
-    leg2 = new CustomizedCube(program, vec4(-1.5, -8, 0.0, 1.0), 2, 1.0, 4.5);
+    leg2 = new CustomizedCube(program, vec4(-1.5, -8, 0.0, 1.0), 2, 1.0, 4.5,1,5);
     leg2.init();
 
 
