@@ -2,6 +2,7 @@
 var canvas;
 var gl;
 var seconds = 0;
+var texFlag = true;
 
 function mult_v(m, v) {
     if (!m.matrix) {
@@ -25,13 +26,102 @@ function mult_v(m, v) {
 }
 
 /**
+ *
+ */
+class Light {
+    constructor(program, position) {
+        this.program = program;
+        this.position = position;
+        this.intensity = {
+            ambient: vec3(1, 1, 1),
+            diffuse: vec3(1.0, 1.0, 1.0),
+            specular: vec3(1.0, 1.0, 1.0)
+        }
+    }
+
+    render() {
+        var pos = gl.getUniformLocation(this.program, "v_Light");
+        gl.uniform4fv(pos, flatten(this.position));
+
+        // sending light properties
+        var ambient = gl.getUniformLocation(this.program, "light_Ambient");
+        gl.uniform3fv(ambient, flatten(this.intensity.ambient));
+
+        var diffuse = gl.getUniformLocation(this.program, "light_Diffuse");
+        gl.uniform3fv(diffuse, flatten(this.intensity.diffuse));
+
+        var specular = gl.getUniformLocation(this.program, "light_Specular");
+        gl.uniform3fv(specular, flatten(this.intensity.specular));
+    }
+
+    rotate(angle) {
+        this.position = mult_v(rotate(angle, vec3(0, 1, 0)), this.position);
+    }
+}
+
+
+/**
+ *
+ */
+class Camera {
+    constructor(program, position, target, up) {
+        this.program = program;
+        this.position = position;
+        this.target = target;
+        this.up = up;
+        this.SENSITIVITY = 0.1
+        this.yaw = -134.0
+        this.pitch = -27.0
+    }
+
+    render() {
+        var pos = gl.getUniformLocation(this.program, "v_Camera");
+        gl.uniform4fv(pos, flatten(vec4(this.position, 1.0)));
+
+        var view = gl.getUniformLocation(this.program, "m_View");
+        var matView = lookAt(this.position, this.target, this.up);
+        gl.uniformMatrix4fv(view, false, flatten(matView));
+
+        var proj = gl.getUniformLocation(this.program, "m_Proj");
+        var matProj = perspective(90, 1.0, 0.0001, 1000);
+        gl.uniformMatrix4fv(proj, false, flatten(matProj));
+
+    }
+
+    rotate(angle) {
+        this.position = vec3(mult_v(rotate(angle, vec3(0, 1, 0)), vec4(this.position)));
+    }
+
+    rotate(xOffset, yOffset)
+    {
+        xOffset *= this.SENSITIVITY;
+        yOffset *= this.SENSITIVITY;
+
+        this.yaw += xOffset
+        this.pitch += yOffset
+
+        if(this.pitch > 89.0) this.pitch = 89.0
+        if(this.pitch < -89.0) this.pitch = -89.0
+
+        var directionX = Math.cos(radians(this.yaw)) * Math.cos(radians(this.pitch))
+        var directionY = Math.sin(radians(this.pitch));
+        var directionZ = Math.sin(radians(this.yaw)) * Math.cos(radians(this.pitch))
+        var direction = vec3(directionX, directionY, directionZ)
+
+        this.target = add(this.position, normalize(direction))
+    }
+}
+
+
+
+
+/**
  * _3DObject class represents an abstract structure to define 3D objects.
  * Objects should be initialized by passing program id for compiled shaders.
  * Object holds internally references to buffers, vertices, indices and other attributes of an object.
  * Position is a vec3(x, y, z) structure.
  * Model matrix is object transformation matrix, which initially is identity matrix. 
  * Child classes should override loadData method and implement specific vertex, index loading mechanism.
- * TODO: add texture
  */
 class _3DObject {
     constructor(program, position = vec3(0, 0, 0)) {
@@ -248,93 +338,6 @@ class _3DObject {
     }
 }
 
-/**
- * 
- */
-class Camera {
-    constructor(program, position, target, up) {
-        this.program = program;
-        this.position = position;
-        this.target = target;
-        this.up = up;
-        this.SENSITIVITY = 0.1
-        this.yaw = -134.0
-        this.pitch = -27.0
-    }
-
-    render() {
-        var pos = gl.getUniformLocation(this.program, "v_Camera");
-        gl.uniform4fv(pos, flatten(vec4(this.position, 1.0)));
-
-        var view = gl.getUniformLocation(this.program, "m_View");
-        var matView = lookAt(this.position, this.target, this.up);
-        gl.uniformMatrix4fv(view, false, flatten(matView));
-
-        var proj = gl.getUniformLocation(this.program, "m_Proj");
-        var matProj = perspective(90, 1.0, 0.0001, 1000);
-        gl.uniformMatrix4fv(proj, false, flatten(matProj));
-
-    }
-
-    rotate(angle) {
-        this.position = vec3(mult_v(rotate(angle, vec3(0, 1, 0)), vec4(this.position)));
-    }
-
-    rotate(xOffset, yOffset)
-    {
-        xOffset *= this.SENSITIVITY;
-        yOffset *= this.SENSITIVITY;
-
-        this.yaw += xOffset
-        this.pitch += yOffset
-
-        if(this.pitch > 89.0) this.pitch = 89.0
-        if(this.pitch < -89.0) this.pitch = -89.0
-
-        var directionX = Math.cos(radians(this.yaw)) * Math.cos(radians(this.pitch))
-        var directionY = Math.sin(radians(this.pitch));
-        var directionZ = Math.sin(radians(this.yaw)) * Math.cos(radians(this.pitch))
-        var direction = vec3(directionX, directionY, directionZ)
-
-        this.target = add(this.position, normalize(direction))
-    }
-}
-
-/**
- * 
- */
-class Light {
-    constructor(program, position) {
-        this.program = program;
-        this.position = position;
-        this.intensity = {
-            ambient: vec3(1, 1, 1),
-            diffuse: vec3(1.0, 1.0, 1.0),
-            specular: vec3(1.0, 1.0, 1.0)
-        }
-    }
-
-    render() {
-        var pos = gl.getUniformLocation(this.program, "v_Light");
-        gl.uniform4fv(pos, flatten(this.position));
-
-        // sending light properties
-        var ambient = gl.getUniformLocation(this.program, "light_Ambient");
-        gl.uniform3fv(ambient, flatten(this.intensity.ambient));
-
-        var diffuse = gl.getUniformLocation(this.program, "light_Diffuse");
-        gl.uniform3fv(diffuse, flatten(this.intensity.diffuse));
-
-        var specular = gl.getUniformLocation(this.program, "light_Specular");
-        gl.uniform3fv(specular, flatten(this.intensity.specular));
-    }
-
-    rotate(angle) {
-        this.position = mult_v(rotate(angle, vec3(0, 1, 0)), this.position);
-    }
-}
-
-
 
 class CustomizedCube extends _3DObject {
     constructor(program, position, size = 1, xSize = 1, ySize = 1, zSize = 1) {
@@ -347,14 +350,14 @@ class CustomizedCube extends _3DObject {
 
 
         this.initialVertices = [
-            vec4(-0.5  * xSize * size, -0.5 * ySize * size,  0.5 * zSize * size, 1.0 ),
-            vec4(-0.5  * xSize * size,  0.5 * ySize * size,  0.5 * zSize * size, 1.0 ),
-            vec4( 0.5  * xSize * size,  0.5 * ySize * size,  0.5 * zSize * size, 1.0 ),
-            vec4( 0.5  * xSize * size, -0.5 * ySize * size,  0.5 * zSize * size, 1.0 ),
-            vec4(-0.5  * xSize * size, -0.5 * ySize * size, -0.5 * zSize * size, 1.0 ),
-            vec4(-0.5  * xSize * size,  0.5 * ySize * size, -0.5 * zSize * size, 1.0 ),
-            vec4( 0.5  * xSize * size,  0.5 * ySize * size, -0.5 * zSize * size, 1.0 ),
-            vec4( 0.5  * xSize * size, -0.5 * ySize * size, -0.5 * zSize * size, 1.0 )
+            vec4(-0.5  * this.xSize * this.size, -0.5 * this.ySize * this.size,  0.5 * this.zSize * this.size, 1.0 ),
+            vec4(-0.5  * this.xSize * this.size,  0.5 * this.ySize * this.size,  0.5 * this.zSize * this.size, 1.0 ),
+            vec4( 0.5  * this.xSize * this.size,  0.5 * this.ySize * this.size,  0.5 * this.zSize * this.size, 1.0 ),
+            vec4( 0.5  * this.xSize * this.size, -0.5 * this.ySize * this.size,  0.5 * this.zSize * this.size, 1.0 ),
+            vec4(-0.5  * this.xSize * this.size, -0.5 * this.ySize * this.size, -0.5 * this.zSize * this.size, 1.0 ),
+            vec4(-0.5  * this.xSize * this.size,  0.5 * this.ySize * this.size, -0.5 * this.zSize * this.size, 1.0 ),
+            vec4( 0.5  * this.xSize * this.size,  0.5 * this.ySize * this.size, -0.5 * this.zSize * this.size, 1.0 ),
+            vec4( 0.5  * this.xSize * this.size, -0.5 * this.ySize * this.size, -0.5 * this.zSize * this.size, 1.0 )
         ];
     }
 
@@ -389,8 +392,7 @@ class CustomizedCube extends _3DObject {
                 break
         }
 
-        texCoord2 = this.texCoord
-
+        texCoord2 = texCoord;
 
         this.vertices.push(this.initialVertices[a]);
         this.normals.push(normal);
@@ -445,7 +447,6 @@ class CustomizedCube extends _3DObject {
 var camera;
 var light;
 
-
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
 
@@ -495,7 +496,8 @@ window.onload = function init() {
     lastX = event.clientX;
     lastY = event.clientY;
 
-    camera.rotate(xOffset, yOffset)
+    camera.rotate(xOffset, yOffset);
+    // console.log(camera.position);
     });
 
     // var arrayX = [];
@@ -532,11 +534,6 @@ window.onload = function init() {
     // camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 3, 0));
     camera = new Camera(program, vec3(10.0, 5.0, 10.0), vec3(0, 0, 0), vec3(0, 1, 0));
     light = new Light(program, vec4(2, 4, 6, 1));
-
-
-
-
-
 
 
     head = new CustomizedCube(program, vec4(0.0, 7.0, 0.0, 1.0), 2, 2.75, 1.5,1.75);
@@ -581,17 +578,17 @@ function render() {
     
 
     // if (seconds < 50){
-    //     // leg1.rotate(-0.5);
-    //     // leg2.rotate(0.5);
+    //     leg1.rotate(-0.5);
+    //     leg2.rotate(0.5);
     //     // arm1.rotate(0.5);
     //     // arm2.rotate(-0.5);
     // } else {
-    //     // leg1.rotate(0.5);
-    //     // leg2.rotate(-0.5);
+    //     leg1.rotate(0.5);
+    //     leg2.rotate(-0.5);
     //     // arm1.rotate(-0.5);
     //     // arm2.rotate(0.5);
-    //     if(seconds == 150){
-    //         seconds = -50;
+    //     if(seconds == 125){
+    //         seconds = -25;
     //     }
     // }
 
